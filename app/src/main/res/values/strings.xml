@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">"Running Diary"</string>
+    <string name="start">Start</string>
+    <string name="time">Time</string>
+    <string name="distance">Distance</string>
+    <string name="pause">PAUSE</string>
+    <string name="stop">STOP</string>
+    <string name="music">MUSIC</string>
+    <string name="your_speed">Your Speed</string>
+    <string name="pace">Pace</string>
+    <string name="speed">Speed</string>
+    <string name="your_pace">Your Pace</string>
+    <string name="back">back</string>
+    <string name="map_key" translatable="false">
+        AIzaSyCoobq2SA1Q1gIuFbfbJo3ACBp-tZuFI10
+        </string>
+</resources>
