@@ -1,8 +1,13 @@
 package comp5216.sydney.edu.au.runningdiary;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
+import android.Manifest;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -22,6 +27,8 @@ public class HomeActivity extends AppCompatActivity {
     ListView listView;
     ArrayAdapter<String[]> adapter;
     List<String[]> logList;
+    private static final int PERMISSIONS_READ_EXTERNAL_STORAGE = 101;
+
 
 
     @Override
@@ -31,6 +38,25 @@ public class HomeActivity extends AppCompatActivity {
 
         initializeDataBase();
         initializeListView();
+        Log.d("HomeActuvity", "successfully init database and listView");
+        Bundle extras = getIntent().getExtras();
+        String[] item = new String[2];
+        try{
+
+            item[0] = extras.getString("date");
+            item[1] = extras.getString("statistics");
+            if(item[0] != null && item[1] != null) {
+                logList.add(0,item);
+                adapter.notifyDataSetChanged();
+                saveItemsToDatabase();
+            }
+            else{
+                Log.d("null Data:", item[0] + "|" + item[1]);
+            }
+        }catch (Exception e) {
+            Log.d("Intent.getExtra exceptions", e.toString());
+        }
+        getAudioAccessPermission();
     }
 
     public void onPaceCakBtnClick(View v) {
@@ -40,6 +66,36 @@ public class HomeActivity extends AppCompatActivity {
     public void onMapBtnClick(View v) {
         Intent intent = new Intent(this, StartMapActivity.class);
         startActivity(intent);
+    }
+        public void getAudioAccessPermission() {
+        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                == PackageManager.PERMISSION_GRANTED) {
+           //do nothing
+        } else {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE},
+                    PERMISSIONS_READ_EXTERNAL_STORAGE);
+        }
+    }
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[],
+                                           @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case PERMISSIONS_READ_EXTERNAL_STORAGE: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                  //  mLocationPermissionGranted = true;
+                }
+            }
+//            break;
+//            case PERMISSIONS_READ_EXTERNAL_STORAGE: {
+//                if (grantResults.length > 0
+//                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+//                    //mReadExternalStoragePremissionGranted = true;
+//                }
+//            }
+        }
     }
 
     private void readItemsFromDatabase() {
@@ -92,6 +148,11 @@ public class HomeActivity extends AppCompatActivity {
                 TextView text2 = (TextView) view.findViewById(android.R.id.text2);
                 text1.setText(entry[0]);
                 text2.setText(entry[1]);
+
+                ViewGroup.LayoutParams params = view.getLayoutParams();
+                params.height = 200;
+                view.setLayoutParams(params);
+
                 return view;
             }
         };

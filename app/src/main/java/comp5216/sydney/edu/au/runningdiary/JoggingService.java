@@ -1,7 +1,6 @@
 package comp5216.sydney.edu.au.runningdiary;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -18,6 +17,7 @@ import android.widget.TextView;
 
 import androidx.annotation.Nullable;
 
+
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -25,7 +25,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.text.DecimalFormat;
-
 import static comp5216.sydney.edu.au.runningdiary.StartMapActivity.TAG;
 
 

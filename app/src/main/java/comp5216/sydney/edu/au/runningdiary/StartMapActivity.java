@@ -1,5 +1,6 @@
 package comp5216.sydney.edu.au.runningdiary;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -39,6 +40,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +49,9 @@ import java.util.Objects;
 public class StartMapActivity extends FragmentActivity implements OnMapReadyCallback {
     //static stuff
     public static final String TAG = "Log";
-    private static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 100;
+    static final int PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION = 100;
+    //private static final int PERMISSIONS_READ_EXTERNAL_STORAGE = 101;
+
     private static final int REQUEST_CHANGE_SONG = 101;
     private static final String KEY_CAMERA_POSITION = "camera_position";
     private static final String KEY_LOCATION = "location";
@@ -59,6 +63,7 @@ public class StartMapActivity extends FragmentActivity implements OnMapReadyCall
     private Location mCurrentLocation, mLastKnownLocation;
     private LatLng mDefaultLatLng = new LatLng(-34, 151);
     private FusedLocationProviderClient mFusedLocationProviderClient;
+    private boolean isRunning = false;
     private GoogleMap mMap;
     //song stuff
     private TextView mTextSongName;
@@ -69,6 +74,7 @@ public class StartMapActivity extends FragmentActivity implements OnMapReadyCall
     private PlayerAdapter mPlayerAdapter;
     private String currentSongName, currentSongPath;
     private HashMap<String, String> audioMap;
+
 
     JoggingService mService;
     boolean mBound = false;
@@ -81,12 +87,14 @@ public class StartMapActivity extends FragmentActivity implements OnMapReadyCall
         setContentView(R.layout.activity_maps);
         initializeMap(savedInstanceState);
 
-        initializePlayList();
-        //setup name and absolute path to song
-        setDefaultSong();
-        initializeUI();
-        initializeSeekbar();
-        initializePlaybackController();
+            initializePlayList();
+            //setup name and absolute path to song
+            setDefaultSong();
+            initializeUI();
+            initializeSeekbar();
+            initializePlaybackController();
+
+        Log.d("onCreate" , "onCreate success");
     }
     @Override
     protected void onStart() {
@@ -161,57 +169,69 @@ public class StartMapActivity extends FragmentActivity implements OnMapReadyCall
 
     public void onStartBtnClick(View v) {
 
-        if (mBound) {
-            mService.origin = mLastKnownLocation;
-            mService.setMap(mMap);
-            mService.startTimer( timerText );
-            mService.setDistance( distanceText );
-            mService.startRunning();
-            Log.d(TAG, "onStartBtnClick: Service Start");
-        }
+            if (mBound && !isRunning) {
+                mService.origin = mLastKnownLocation;
+                mService.setMap(mMap);
+                mService.startTimer( timerText );
+                mService.setDistance( distanceText );
+                mService.startRunning();
+                Log.d(TAG, "onStartBtnClick: Service Start");
+                isRunning = true;
+            }
     }
+
     public void onFinishBtnClick(View v) {
-        //unbind Service
-        mService.stopTimer();
-        mService.stopRunning();
-        Intent intent = new Intent(this, FinishRunningActivity.class);
-        String str_dis, str_time;
-        str_dis = distanceText.getText().toString();
-        Log.d("distance1 = ", str_dis);
-        str_time = timerText.getText().toString();
-        float minutes = mService.minutes + mService.seconds / 60f;
-        //meters to miles
-        float flo_dis = Float.valueOf(str_dis) * 0.0006f;
-        Log.d("distance2 = ", String.valueOf(flo_dis));
+        if(isRunning) {
+            //unbind Service
+            mService.stopTimer();
+            mService.stopRunning();
+            Intent intent = new Intent(this, FinishRunningActivity.class);
+            String str_dis, str_time;
+            str_dis = distanceText.getText().toString();
+            Log.d("distance1 = ", str_dis);
+            str_time = timerText.getText().toString();
+            float minutes = mService.minutes + mService.seconds / 60f;
+            //meters to miles
+            float flo_dis = Float.valueOf(str_dis) * 0.0006f;
+            Log.d("distance2 = ", String.valueOf(flo_dis));
 
-        //return mins per mile
+            float pace ;
+            if(flo_dis == 0f) {
+                pace = 0f;
+            }else{
+                //return Mins per mile
+                pace = minutes / flo_dis;
+            }
+            //return miles per hour
+            float speed;
 
-        float pace = minutes / flo_dis;
-        //return miles per hour
-        float speed = flo_dis / (minutes / 60f);
+            if(minutes == 0f) {
+                speed = 0f;
+            }else{
+                speed = flo_dis / (minutes / 60f);
+            }
 
-        //passing strings
-        intent.putExtra("distance", str_dis);
-        intent.putExtra("time", str_time);
-        intent.putExtra("pace", String.valueOf(pace));
-        intent.putExtra("speed", String.valueOf(speed));
-        startActivity(intent);
+            //DecimalFormat df = new DecimalFormat("#.###");
 
-        //unbind the service
-        try {
-            unbindService(connection);
-            mBound = false;
-            Log.d("unbind success","mBound = false");
+            //passing strings
+            intent.putExtra("distance",String.valueOf(flo_dis));
+            intent.putExtra("time", str_time);
+            intent.putExtra("pace", String.valueOf(pace));
+            intent.putExtra("speed",String.valueOf(speed));
+            startActivity(intent);
 
+            //unbind the service
+            try {
+                unbindService(connection);
+                mBound = false;
+                Log.d("unbind success","mBound = false");
+
+            }
+            catch (Exception e) {
+                Log.d("unbind failes", e.toString());
+            }
         }
-        catch (Exception e) {
-            Log.d("unbind failes", e.toString());
-        }
-
-
     }
-
-
 
         /*
      * map stuff     */
@@ -244,6 +264,18 @@ public class StartMapActivity extends FragmentActivity implements OnMapReadyCall
                     PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
     }
+//    public void getAudioAccessPermission() {
+//        if (ContextCompat.checkSelfPermission(this.getApplicationContext(),
+//                Manifest.permission.READ_EXTERNAL_STORAGE)
+//                == PackageManager.PERMISSION_GRANTED) {
+//           //do nothing
+//        } else {
+//            ActivityCompat.requestPermissions(this,
+//                    new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE},
+//                    PERMISSIONS_READ_EXTERNAL_STORAGE);
+//        }
+//    }
+
     //Override the onRequestPermissionsResult() callback to handle the permission requested:
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[],
@@ -255,8 +287,11 @@ public class StartMapActivity extends FragmentActivity implements OnMapReadyCall
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     mLocationPermissionGranted = true;
+                    getDeviceLocation();
+
                 }
             }
+
         }
         updateLocationUI();
     }
@@ -374,27 +409,32 @@ public class StartMapActivity extends FragmentActivity implements OnMapReadyCall
                 });
     }
     private void initializePlayList() {
-        audioMap = new HashMap<>();
+       // getAudioAccessPermission();
+        try{
+//            if(mReadExternalStoragePermissionGranted){
+                audioMap = new HashMap<>();
+                //specify  are the contents we are going to retrieve
+                String[] mProjections  = { MediaStore.Audio.Media.DATA,MediaStore.Audio.Media.DISPLAY_NAME };
+                //set the projection and make a query for data
+                Cursor audioCursor = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                        mProjections, null, null, null);
 
-        //specify  are the contents we are going to retrieve
-        String[] mProjections  = { MediaStore.Audio.Media.DATA,MediaStore.Audio.Media.DISPLAY_NAME };
-        //set the projection and make a query for data
-        Cursor audioCursor = getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                mProjections, null, null, null);
+                //add that data into a list.
+                if(audioCursor != null){
+                    if(audioCursor.moveToFirst()){
+                        do{
+                            int nameIndex = audioCursor.
+                                    getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
+                            int pathIndex = audioCursor.
+                                    getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+                            audioMap.put(audioCursor.getString(nameIndex), audioCursor.getString(pathIndex));
+                        }while(audioCursor.moveToNext());
+                    }
+                }
+                audioCursor.close();
+        }catch (Exception e) {
 
-        //add that data into a list.
-        if(audioCursor != null){
-            if(audioCursor.moveToFirst()){
-                do{
-                    int nameIndex = audioCursor.
-                            getColumnIndexOrThrow(MediaStore.Audio.Media.DISPLAY_NAME);
-                    int pathIndex = audioCursor.
-                            getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
-                    audioMap.put(audioCursor.getString(nameIndex), audioCursor.getString(pathIndex));
-                }while(audioCursor.moveToNext());
-            }
         }
-        audioCursor.close();
     }
     private void initializePlaybackController() {
         MediaPlayerHolder mMediaPlayerHolder = new MediaPlayerHolder(this);

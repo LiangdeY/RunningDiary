@@ -2,9 +2,11 @@ package comp5216.sydney.edu.au.runningdiary;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -63,6 +65,13 @@ public class CalculatePaceActivity extends AppCompatActivity {
             speed = 0f;
         }
     }
+
+    public void onHomeBtnClick( View v ) {
+        Intent intent  = new Intent(this,HomeActivity.class);
+        startActivity(intent);
+    }
+
+
 
     public float toFloat(EditText edit) {
         //handle invalid input
